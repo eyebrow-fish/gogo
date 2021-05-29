@@ -53,6 +53,11 @@ func Parse(program string) []Token {
 			continue
 		}
 
+		if ps.inStringLiteral && c != '"' {
+			ps.visibleToken.Data += string(c)
+			continue
+		}
+
 		switch c {
 		case ' ', ';':
 			ps.appendVisibleToken(c)
@@ -60,12 +65,19 @@ func Parse(program string) []Token {
 			if ps.visibleToken != nil && ps.inStringLiteral {
 				ps.inStringLiteral = false
 				ps.appendVisibleToken(c)
-				ps.tokens = append(ps.tokens, Token{CloseParen, ""})
+				ps.tokens = append(ps.tokens, Token{CloseQuote, ""})
 				continue
 			}
 
-			ps.tokens = append(ps.tokens, Token{OpenParen, ""})
+			ps.tokens = append(ps.tokens, Token{OpenQuote, ""})
 			ps.inStringLiteral = true
+			ps.visibleToken = &Token{Literal, ""}
+		case '(':
+			ps.appendVisibleToken(c)
+			ps.tokens = append(ps.tokens, Token{OpenParen, ""})
+		case ')':
+			ps.appendVisibleToken(c)
+			ps.tokens = append(ps.tokens, Token{CloseParen, ""})
 		case ':':
 			if ps.visibleToken == nil {
 				ps.visibleToken = &Token{Assignment, ""}
@@ -115,6 +127,8 @@ const (
 	Equals
 	Newline
 	Semicolon
+	OpenQuote
+	CloseQuote
 	OpenParen
 	CloseParen
 )
