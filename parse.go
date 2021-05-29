@@ -102,12 +102,6 @@ const (
 	Assignment
 	Reassignment
 	Equals
-	Plus
-	Minus
 	Newline
 	Semicolon
-	OpenParen
-	CloseParen
-	OpenBracket
-	CloseBracket
 )
