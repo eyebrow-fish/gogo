@@ -3,6 +3,7 @@ package gogo
 type parseState struct {
 	tokens       []Token
 	visibleToken *Token
+	inComment    bool
 }
 
 func (ps *parseState) appendVisibleToken(terminatingC rune) {
@@ -33,6 +34,19 @@ func Parse(program string) []Token {
 
 	for i, c := range program {
 		lastC := i == len(program)-1
+
+		switch c {
+		case '#':
+			ps.inComment = true
+		case '\n':
+			ps.inComment = false
+			continue
+		}
+
+		if ps.inComment {
+			continue
+		}
+
 		switch c {
 		case ' ', ';':
 			ps.appendVisibleToken(c)
@@ -79,7 +93,6 @@ type TokenType uint8
 
 const (
 	Literal TokenType = iota
-	Comment
 	Whitespace
 	Assignment
 	Reassignment

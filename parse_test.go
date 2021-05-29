@@ -34,6 +34,13 @@ func TestParse(t *testing.T) {
 			{Whitespace, ""},
 			{Literal, `"bux"`},
 		}},
+		{"comments", args{"# hello!\nabc := 123"}, []Token{
+			{Literal, "abc"},
+			{Whitespace, ""},
+			{Assignment, ""},
+			{Whitespace, ""},
+			{Literal, "123"},
+		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
