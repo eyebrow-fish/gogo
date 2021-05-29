@@ -1,9 +1,10 @@
 package gogo
 
 type parseState struct {
-	tokens       []Token
-	visibleToken *Token
-	inComment    bool
+	tokens          []Token
+	visibleToken    *Token
+	inComment       bool
+	inStringLiteral bool
 }
 
 func (ps *parseState) appendVisibleToken(terminatingC rune) {
@@ -55,6 +56,16 @@ func Parse(program string) []Token {
 		switch c {
 		case ' ', ';':
 			ps.appendVisibleToken(c)
+		case '"':
+			if ps.visibleToken != nil && ps.inStringLiteral {
+				ps.inStringLiteral = false
+				ps.appendVisibleToken(c)
+				ps.tokens = append(ps.tokens, Token{CloseParen, ""})
+				continue
+			}
+
+			ps.tokens = append(ps.tokens, Token{OpenParen, ""})
+			ps.inStringLiteral = true
 		case ':':
 			if ps.visibleToken == nil {
 				ps.visibleToken = &Token{Assignment, ""}
@@ -104,4 +115,6 @@ const (
 	Equals
 	Newline
 	Semicolon
+	OpenParen
+	CloseParen
 )
