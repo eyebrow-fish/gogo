@@ -28,6 +28,7 @@ func TestParse(t *testing.T) {
 			{Whitespace, ""},
 			{Literal, `"bar"`},
 			{Semicolon, ""},
+			{Whitespace, ""},
 			{Literal, "foo"},
 			{Whitespace, ""},
 			{Reassignment, ""},
@@ -35,6 +36,7 @@ func TestParse(t *testing.T) {
 			{Literal, `"bux"`},
 		}},
 		{"comments", args{"# hello!\nabc := 123"}, []Token{
+			{Newline, ""},
 			{Literal, "abc"},
 			{Whitespace, ""},
 			{Assignment, ""},

@@ -12,6 +12,8 @@ func (ps *parseState) appendVisibleToken(terminatingC rune) {
 		terminatingToken = &Token{Whitespace, ""}
 	} else if terminatingC == ';' {
 		terminatingToken = &Token{Semicolon, ""}
+	} else if terminatingC == '\n' {
+		terminatingToken = &Token{Newline, ""}
 	}
 
 	if ps.visibleToken != nil {
@@ -22,6 +24,8 @@ func (ps *parseState) appendVisibleToken(terminatingC rune) {
 		}
 
 		ps.visibleToken = nil
+	} else if terminatingToken != nil {
+		ps.tokens = append(ps.tokens, *terminatingToken)
 	}
 }
 
@@ -40,6 +44,7 @@ func Parse(program string) []Token {
 			ps.inComment = true
 		case '\n':
 			ps.inComment = false
+			ps.appendVisibleToken(c)
 			continue
 		}
 
