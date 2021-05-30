@@ -1,5 +1,7 @@
 package gogo
 
+import "strconv"
+
 type parseState struct {
 	tokens          []Token
 	visibleToken    *Token
@@ -18,6 +20,14 @@ func (ps *parseState) appendVisibleToken(terminatingC rune) {
 	}
 
 	if ps.visibleToken != nil {
+		if ps.visibleToken.Type == Identifier {
+			if _, err := strconv.Atoi(ps.visibleToken.Data); err == nil {
+				ps.visibleToken.Type = Literal
+			} else if _, err := strconv.ParseBool(ps.visibleToken.Data); err == nil {
+				ps.visibleToken.Type = Literal
+			}
+		}
+
 		if terminatingToken != nil {
 			ps.tokens = append(ps.tokens, *ps.visibleToken, *terminatingToken)
 		} else {
@@ -95,7 +105,7 @@ func Parse(program string) []Token {
 
 			ps.visibleToken = &Token{Reassignment, ""}
 		default:
-			if ps.visibleToken != nil && ps.visibleToken.Type == Literal {
+			if ps.visibleToken != nil && ps.visibleToken.Type == Identifier {
 				ps.visibleToken.Data += string(c)
 
 				if lastC {
@@ -105,7 +115,7 @@ func Parse(program string) []Token {
 				continue
 			}
 
-			ps.visibleToken = &Token{Literal, string(c)}
+			ps.visibleToken = &Token{Identifier, string(c)}
 		}
 	}
 
@@ -120,7 +130,8 @@ type Token struct {
 type TokenType uint8
 
 const (
-	Literal TokenType = iota
+	Identifier TokenType = iota
+	Literal
 	Whitespace
 	Assignment
 	Reassignment

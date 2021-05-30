@@ -15,7 +15,7 @@ func TestParse(t *testing.T) {
 		want []Token
 	}{
 		{"variable assignment", args{`foo := "bar"`}, []Token{
-			{Literal, "foo"},
+			{Identifier, "foo"},
 			{Whitespace, ""},
 			{Assignment, ""},
 			{Whitespace, ""},
@@ -24,7 +24,7 @@ func TestParse(t *testing.T) {
 			{CloseQuote, ""},
 		}},
 		{"variable reassignment", args{`foo := "bar"; foo = "bux"`}, []Token{
-			{Literal, "foo"},
+			{Identifier, "foo"},
 			{Whitespace, ""},
 			{Assignment, ""},
 			{Whitespace, ""},
@@ -33,7 +33,7 @@ func TestParse(t *testing.T) {
 			{CloseQuote, ""},
 			{Semicolon, ""},
 			{Whitespace, ""},
-			{Literal, "foo"},
+			{Identifier, "foo"},
 			{Whitespace, ""},
 			{Reassignment, ""},
 			{Whitespace, ""},
@@ -43,24 +43,31 @@ func TestParse(t *testing.T) {
 		}},
 		{"comments", args{"# hello!\nabc := 123"}, []Token{
 			{Newline, ""},
-			{Literal, "abc"},
+			{Identifier, "abc"},
 			{Whitespace, ""},
 			{Assignment, ""},
 			{Whitespace, ""},
 			{Literal, "123"},
 		}},
 		{"function", args{"input()"}, []Token{
-			{Literal, "input"},
+			{Identifier, "input"},
 			{OpenParen, ""},
 			{CloseParen, ""},
 		}},
 		{"function with string literal", args{`print("Hello, World!")`}, []Token{
-			{Literal, "print"},
+			{Identifier, "print"},
 			{OpenParen, ""},
 			{OpenQuote, ""},
 			{Literal, "Hello, World!"},
 			{CloseQuote, ""},
 			{CloseParen, ""},
+		}},
+		{"boolean literal", args{"x := true"}, []Token{
+			{Identifier, "x"},
+			{Whitespace, ""},
+			{Assignment, ""},
+			{Whitespace, ""},
+			{Literal, "true"},
 		}},
 	}
 	for _, tt := range tests {
