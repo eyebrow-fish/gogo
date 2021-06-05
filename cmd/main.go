@@ -25,5 +25,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gogo.Go(*tree)
+	if err = gogo.Go(*tree); err != nil {
+		log.Fatal(err)
+	}
 }
