@@ -6,6 +6,11 @@ import (
 	"strconv"
 )
 
+// Effectively a set for fast indexing
+var builtinFunctions = map[string]interface{}{
+	"print": nil,
+}
+
 type treeState struct {
 	currentIdentifier string
 	inStringLiteral   bool
@@ -51,14 +56,7 @@ func BuildTrees(tokens []Token) (*SyntaxTree, error) {
 				continue
 			}
 
-			deepestChild := lastRootTree.Children[len(lastRootTree.Children)-1]
-			if lastRootTree.Type != VariableAssignment && lastRootTree.Type != VariableReassignment {
-				return nil, fmt.Errorf("unexpected literal: %s", token.Data)
-			}
-			if deepestChild.Type == LiteralInteger || deepestChild.Type == LiteralString {
-				return nil, fmt.Errorf(`unexpected literal "%s" after literal "%s"`, token.Data, deepestChild.Data)
-			}
-
+			// Literal typing
 			var literalType TreeType
 			if ts.inStringLiteral {
 				literalType = LiteralString
@@ -72,11 +70,39 @@ func BuildTrees(tokens []Token) (*SyntaxTree, error) {
 				}
 			}
 
+			// Function call
+			if len(lastRootTree.Children) < 1 {
+				if lastRootTree.Type != BuiltinFunction {
+					return nil, fmt.Errorf("expected function for literal: %v", ts.currentIdentifier)
+				}
+
+				lastRootTree.Children = append(lastRootTree.Children, SyntaxTree{Type: literalType, Data: token.Data})
+
+				continue
+			}
+
+			// Variable assignment
+			deepestChild := lastRootTree.Children[len(lastRootTree.Children)-1]
+			if lastRootTree.Type != VariableAssignment && lastRootTree.Type != VariableReassignment {
+				return nil, fmt.Errorf("unexpected literal: %s", token.Data)
+			}
+			if deepestChild.Type == LiteralInteger || deepestChild.Type == LiteralString {
+				return nil, fmt.Errorf(`unexpected literal "%s" after literal "%s"`, token.Data, deepestChild.Data)
+			}
+
 			lastRootTree.Children = append(lastRootTree.Children, SyntaxTree{Type: literalType, Data: token.Data})
 			ts.currentIdentifier = ""
 		case OpenParen:
+			_, ok := builtinFunctions[ts.currentIdentifier]
+			if ok {
+				tree.Children = append(tree.Children, SyntaxTree{Type: BuiltinFunction, Data: ts.currentIdentifier})
+				continue
+			}
+
+			return nil, fmt.Errorf("unknown builtin function: %s", ts.currentIdentifier)
+		case OpenQuote:
 			ts.inStringLiteral = true
-		case CloseParen:
+		case CloseQuote:
 			ts.inStringLiteral = false
 		case Newline, Semicolon:
 			ts.currentIdentifier = ""
@@ -103,4 +129,5 @@ const (
 	LiteralInteger
 	LiteralString
 	LiteralBool
+	BuiltinFunction
 )
