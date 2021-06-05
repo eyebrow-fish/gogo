@@ -12,11 +12,11 @@ type parseState struct {
 func (ps *parseState) appendVisibleToken(terminatingC rune) {
 	var terminatingToken *Token
 	if terminatingC == ' ' {
-		terminatingToken = &Token{Whitespace, ""}
+		terminatingToken = &Token{Type: Whitespace}
 	} else if terminatingC == ';' {
-		terminatingToken = &Token{Semicolon, ""}
+		terminatingToken = &Token{Type: Semicolon}
 	} else if terminatingC == '\n' {
-		terminatingToken = &Token{Newline, ""}
+		terminatingToken = &Token{Type: Newline}
 	}
 
 	if ps.visibleToken != nil {
@@ -75,22 +75,22 @@ func Parse(program string) []Token {
 			if ps.visibleToken != nil && ps.inStringLiteral {
 				ps.inStringLiteral = false
 				ps.appendVisibleToken(c)
-				ps.tokens = append(ps.tokens, Token{CloseQuote, ""})
+				ps.tokens = append(ps.tokens, Token{Type: CloseQuote})
 				continue
 			}
 
-			ps.tokens = append(ps.tokens, Token{OpenQuote, ""})
+			ps.tokens = append(ps.tokens, Token{Type: OpenQuote})
 			ps.inStringLiteral = true
-			ps.visibleToken = &Token{Literal, ""}
+			ps.visibleToken = &Token{Type: Literal}
 		case '(':
 			ps.appendVisibleToken(c)
-			ps.tokens = append(ps.tokens, Token{OpenParen, ""})
+			ps.tokens = append(ps.tokens, Token{Type: OpenParen})
 		case ')':
 			ps.appendVisibleToken(c)
-			ps.tokens = append(ps.tokens, Token{CloseParen, ""})
+			ps.tokens = append(ps.tokens, Token{Type: CloseParen})
 		case ':':
 			if ps.visibleToken == nil {
-				ps.visibleToken = &Token{Assignment, ""}
+				ps.visibleToken = &Token{Type: Assignment}
 			}
 		case '=':
 			if ps.visibleToken != nil {
@@ -99,11 +99,11 @@ func Parse(program string) []Token {
 				}
 
 				if ps.visibleToken.Type == Reassignment {
-					ps.visibleToken = &Token{Equals, ""}
+					ps.visibleToken = &Token{Type: Equals}
 				}
 			}
 
-			ps.visibleToken = &Token{Reassignment, ""}
+			ps.visibleToken = &Token{Type: Reassignment}
 		default:
 			if ps.visibleToken != nil && ps.visibleToken.Type == Identifier {
 				ps.visibleToken.Data += string(c)
