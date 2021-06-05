@@ -3,6 +3,7 @@ package gogo
 import (
 	"errors"
 	"fmt"
+	"strconv"
 )
 
 type treeState struct {
@@ -62,7 +63,13 @@ func BuildTrees(tokens []Token) (*SyntaxTree, error) {
 			if ts.inStringLiteral {
 				literalType = LiteralString
 			} else {
-				literalType = LiteralInteger
+				if token.Data == "true" || token.Data == "false" {
+					literalType = LiteralBool
+				} else if _, err := strconv.Atoi(token.Data); err == nil {
+					literalType = LiteralInteger
+				} else {
+					return nil, fmt.Errorf("could not literal %s: %v", token.Data, err)
+				}
 			}
 
 			lastRootTree.Children = append(lastRootTree.Children, SyntaxTree{Type: literalType, Data: token.Data})
@@ -95,4 +102,5 @@ const (
 	VariableIdentifier
 	LiteralInteger
 	LiteralString
+	LiteralBool
 )

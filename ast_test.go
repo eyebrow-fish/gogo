@@ -36,6 +36,10 @@ func TestBuildTrees(t *testing.T) {
 				{Type: OpenParen},
 				{Literal, "bar"},
 				{Type: CloseParen},
+				{Type: Semicolon},
+				{Identifier, "foo"},
+				{Type: Reassignment},
+				{Literal, "true"},
 			}},
 			&SyntaxTree{Type: Program, Children: []SyntaxTree{
 				{
@@ -45,6 +49,10 @@ func TestBuildTrees(t *testing.T) {
 				{
 					Type:     VariableReassignment,
 					Children: []SyntaxTree{{Type: VariableIdentifier, Data: "foo"}, {Type: LiteralString, Data: "bar"}},
+				},
+				{
+					Type:     VariableReassignment,
+					Children: []SyntaxTree{{Type: VariableIdentifier, Data: "foo"}, {Type: LiteralBool, Data: "true"}},
 				},
 			}},
 			false,
