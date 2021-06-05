@@ -7,6 +7,7 @@ import (
 
 type treeState struct {
 	currentIdentifier string
+	inStringLiteral   bool
 }
 
 func BuildTrees(tokens []Token) (*SyntaxTree, error) {
@@ -26,13 +27,20 @@ func BuildTrees(tokens []Token) (*SyntaxTree, error) {
 			}
 
 			ts.currentIdentifier = token.Data
-		case Assignment:
+		case Assignment, Reassignment:
 			if ts.currentIdentifier == "" {
 				return nil, errors.New(`expected identifier, got ":="`)
 			}
 
+			var assignmentType TreeType
+			if token.Type == Assignment {
+				assignmentType = VariableAssignment
+			} else {
+				assignmentType = VariableReassignment
+			}
+
 			tree.Children = append(tree.Children, SyntaxTree{
-				Type:     VariableAssignment,
+				Type:     assignmentType,
 				Children: []SyntaxTree{{Type: VariableIdentifier, Data: ts.currentIdentifier}},
 			})
 
@@ -42,11 +50,30 @@ func BuildTrees(tokens []Token) (*SyntaxTree, error) {
 				continue
 			}
 
-			if lastRootTree.Type != VariableAssignment {
+			deepestChild := lastRootTree.Children[len(lastRootTree.Children)-1]
+			if lastRootTree.Type != VariableAssignment && lastRootTree.Type != VariableReassignment {
 				return nil, fmt.Errorf("unexpected literal: %s", token.Data)
 			}
+			if deepestChild.Type == LiteralInteger || deepestChild.Type == LiteralString {
+				return nil, fmt.Errorf(`unexpected literal "%s" after literal "%s"`, token.Data, deepestChild.Data)
+			}
 
-			lastRootTree.Children = append(lastRootTree.Children, SyntaxTree{Type: LiteralValue, Data: token.Data})
+			var literalType TreeType
+			if ts.inStringLiteral {
+				literalType = LiteralString
+			} else {
+				literalType = LiteralInteger
+			}
+
+			lastRootTree.Children = append(lastRootTree.Children, SyntaxTree{Type: literalType, Data: token.Data})
+			ts.currentIdentifier = ""
+		case OpenParen:
+			ts.inStringLiteral = true
+		case CloseParen:
+			ts.inStringLiteral = false
+		case Newline, Semicolon:
+			ts.currentIdentifier = ""
+		default: // Just ignore lol
 		}
 	}
 
@@ -64,6 +91,8 @@ type TreeType uint8
 const (
 	Program TreeType = iota
 	VariableAssignment
+	VariableReassignment
 	VariableIdentifier
-	LiteralValue
+	LiteralInteger
+	LiteralString
 )

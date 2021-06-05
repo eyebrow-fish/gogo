@@ -20,8 +20,33 @@ func TestBuildTrees(t *testing.T) {
 			args{[]Token{{Identifier, "foo"}, {Type: Assignment}, {Literal, "123"}}},
 			&SyntaxTree{Type: Program, Children: []SyntaxTree{{
 				Type:     VariableAssignment,
-				Children: []SyntaxTree{{Type: VariableIdentifier, Data: "foo"}, {Type: LiteralValue, Data: "123"}},
+				Children: []SyntaxTree{{Type: VariableIdentifier, Data: "foo"}, {Type: LiteralInteger, Data: "123"}},
 			}}},
+			false,
+		},
+		{
+			"variable reassignment",
+			args{[]Token{
+				{Identifier, "foo"},
+				{Type: Assignment},
+				{Literal, "123"},
+				{Type: Newline},
+				{Identifier, "foo"},
+				{Type: Reassignment},
+				{Type: OpenParen},
+				{Literal, "bar"},
+				{Type: CloseParen},
+			}},
+			&SyntaxTree{Type: Program, Children: []SyntaxTree{
+				{
+					Type:     VariableAssignment,
+					Children: []SyntaxTree{{Type: VariableIdentifier, Data: "foo"}, {Type: LiteralInteger, Data: "123"}},
+				},
+				{
+					Type:     VariableReassignment,
+					Children: []SyntaxTree{{Type: VariableIdentifier, Data: "foo"}, {Type: LiteralString, Data: "bar"}},
+				},
+			}},
 			false,
 		},
 	}
