@@ -7,7 +7,7 @@ import (
 )
 
 // Effectively a set for fast indexing
-var builtinFunctions = map[string]interface{}{
+var builtinFunctionNames = map[string]interface{}{
 	"print": nil,
 }
 
@@ -93,7 +93,7 @@ func BuildTrees(tokens []Token) (*SyntaxTree, error) {
 			lastRootTree.Children = append(lastRootTree.Children, SyntaxTree{Type: literalType, Data: token.Data})
 			ts.currentIdentifier = ""
 		case OpenParen:
-			_, ok := builtinFunctions[ts.currentIdentifier]
+			_, ok := builtinFunctionNames[ts.currentIdentifier]
 			if ok {
 				tree.Children = append(tree.Children, SyntaxTree{Type: BuiltinFunction, Data: ts.currentIdentifier})
 				continue
