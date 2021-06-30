@@ -13,7 +13,9 @@ var builtinFunctionNames = map[string]interface{}{
 
 type treeState struct {
 	currentIdentifier string
+	currentTree       *SyntaxTree
 	inStringLiteral   bool
+	inFunctionParen   bool
 }
 
 func BuildTrees(tokens []Token) (*SyntaxTree, error) {
@@ -52,10 +54,6 @@ func BuildTrees(tokens []Token) (*SyntaxTree, error) {
 
 			ts.currentIdentifier = ""
 		case Literal:
-			if lastRootTree == nil {
-				continue
-			}
-
 			// Literal typing
 			var literalType TreeType
 			if ts.inStringLiteral {
@@ -71,13 +69,12 @@ func BuildTrees(tokens []Token) (*SyntaxTree, error) {
 			}
 
 			// Function call
-			if len(lastRootTree.Children) < 1 {
-				if lastRootTree.Type != BuiltinFunction {
-					return nil, fmt.Errorf("expected function for literal: %v", ts.currentIdentifier)
-				}
+			if ts.currentTree != nil && ts.currentTree.Type == BuiltinFunction {
+				ts.currentTree.Children = append(ts.currentTree.Children, SyntaxTree{Type: literalType, Data: token.Data})
+			}
 
-				lastRootTree.Children = append(lastRootTree.Children, SyntaxTree{Type: literalType, Data: token.Data})
-
+			// Everything below require a lastRootTree
+			if lastRootTree == nil {
 				continue
 			}
 
@@ -93,13 +90,29 @@ func BuildTrees(tokens []Token) (*SyntaxTree, error) {
 			lastRootTree.Children = append(lastRootTree.Children, SyntaxTree{Type: literalType, Data: token.Data})
 			ts.currentIdentifier = ""
 		case OpenParen:
-			_, ok := builtinFunctionNames[ts.currentIdentifier]
-			if ok {
-				tree.Children = append(tree.Children, SyntaxTree{Type: BuiltinFunction, Data: ts.currentIdentifier})
-				continue
+			if ts.inFunctionParen {
+				return nil, fmt.Errorf("unexpected (, already in function parenthesis")
 			}
 
-			return nil, fmt.Errorf("unknown builtin function: %s", ts.currentIdentifier)
+			if _, ok := builtinFunctionNames[ts.currentIdentifier]; !ok {
+				return nil, fmt.Errorf("unknown builtin function: %s", ts.currentIdentifier)
+			}
+
+			ts.currentTree = &SyntaxTree{Type: BuiltinFunction, Data: ts.currentIdentifier}
+
+			ts.inFunctionParen = true
+		case CloseParen:
+			if !ts.inFunctionParen || ts.currentTree == nil {
+				return nil, fmt.Errorf("unexpected ), no matching open parenthesis")
+			}
+
+			tree.Children = append(tree.Children, *ts.currentTree)
+
+			ts.inFunctionParen = false
+			ts.currentTree = nil
+		case Bang:
+			tree.Children = append(tree.Children, SyntaxTree{Type: ShellCmd, Data: token.Data})
+		case Comma:
 		case OpenQuote:
 			ts.inStringLiteral = true
 		case CloseQuote:
@@ -130,4 +143,5 @@ const (
 	LiteralString
 	LiteralBool
 	BuiltinFunction
+	ShellCmd
 )

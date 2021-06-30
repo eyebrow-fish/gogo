@@ -112,7 +112,9 @@ func Parse(program string) []Token {
 			ps.visibleToken = &Token{Type: Reassignment}
 		case '!':
 			ps.inShellCmd = true
-			ps.visibleToken = &Token{Type: ShellCmd}
+			ps.visibleToken = &Token{Type: Bang}
+		case ',':
+			ps.tokens = append(ps.tokens, Token{Type: Comma})
 		default:
 			if ps.visibleToken != nil && ps.visibleToken.Type == Identifier {
 				ps.visibleToken.Data += string(c)
@@ -151,5 +153,6 @@ const (
 	CloseQuote
 	OpenParen
 	CloseParen
-	ShellCmd
+	Bang
+	Comma
 )

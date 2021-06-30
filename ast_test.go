@@ -74,6 +74,37 @@ func TestBuildTrees(t *testing.T) {
 			}}},
 			false,
 		},
+		{
+			"multi-arg noob",
+			args{[]Token{
+				{Identifier, "print"},
+				{Type: OpenParen},
+				{Type: OpenQuote},
+				{Literal, "Hello,"},
+				{Type: CloseQuote},
+				{Type: Comma},
+				{Type: Whitespace},
+				{Type: OpenQuote},
+				{Literal, "World!"},
+				{Type: CloseQuote},
+				{Type: CloseParen},
+			}},
+			&SyntaxTree{Type: Program, Children: []SyntaxTree{{
+				BuiltinFunction,
+				"print",
+				[]SyntaxTree{{Type: LiteralString, Data: "Hello,"}, {Type: LiteralString, Data: "World!"}},
+			}}},
+			false,
+		},
+		{
+			"shell list dir",
+			args{[]Token{{Bang, "ls -al"}}},
+			&SyntaxTree{Type: Program, Children: []SyntaxTree{{
+				Type: ShellCmd,
+				Data: "ls -al",
+			}}},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
