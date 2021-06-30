@@ -7,6 +7,7 @@ type parseState struct {
 	visibleToken    *Token
 	inComment       bool
 	inStringLiteral bool
+	inShellCmd      bool
 }
 
 func (ps *parseState) appendVisibleToken(terminatingC rune) {
@@ -54,6 +55,7 @@ func Parse(program string) []Token {
 		case '#':
 			ps.inComment = true
 		case '\n':
+			ps.inShellCmd = false
 			ps.inComment = false
 			ps.appendVisibleToken(c)
 			continue
@@ -63,8 +65,12 @@ func Parse(program string) []Token {
 			continue
 		}
 
-		if ps.inStringLiteral && c != '"' {
+		if ps.inStringLiteral && c != '"' || ps.inShellCmd {
 			ps.visibleToken.Data += string(c)
+			if ps.inShellCmd && lastC {
+				ps.appendVisibleToken(c)
+			}
+
 			continue
 		}
 
@@ -104,6 +110,9 @@ func Parse(program string) []Token {
 			}
 
 			ps.visibleToken = &Token{Type: Reassignment}
+		case '!':
+			ps.inShellCmd = true
+			ps.visibleToken = &Token{Type: ShellCmd}
 		default:
 			if ps.visibleToken != nil && ps.visibleToken.Type == Identifier {
 				ps.visibleToken.Data += string(c)
@@ -142,4 +151,5 @@ const (
 	CloseQuote
 	OpenParen
 	CloseParen
+	ShellCmd
 )

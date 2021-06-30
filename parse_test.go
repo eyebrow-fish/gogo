@@ -69,6 +69,16 @@ func TestParse(t *testing.T) {
 			{Type: Whitespace},
 			{Literal, "true"},
 		}},
+		{"shell command", args{"!ls -al"}, []Token{{ShellCmd, "ls -al"}}},
+		{"shell command + boolean literal", args{"!ls -al\nx := true"}, []Token{
+			{ShellCmd, "ls -al"},
+			{Type: Newline},
+			{Identifier, "x"},
+			{Type: Whitespace},
+			{Type: Assignment},
+			{Type: Whitespace},
+			{Literal, "true"},
+		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
