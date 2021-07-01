@@ -1,7 +1,7 @@
 name := "Alex"
 age := 21
 
-# print("2020: ", name, " is ", age)
+# print("2020:", name, "is", age)
 
 age = 22
-# print("2021: ", name, " is ", age)
+print("2021:", name, "is", age)

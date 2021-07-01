@@ -22,16 +22,17 @@ func BuildTrees(tokens []Token) (*SyntaxTree, error) {
 	var tree SyntaxTree
 	var ts treeState
 
-	for _, token := range tokens {
-		var lastRootTree *SyntaxTree
-		if len(tree.Children) > 0 {
-			lastRootTree = &tree.Children[len(tree.Children)-1]
-		}
+	appendCurrentTree := func() {
+		tree.Children = append(tree.Children, *ts.currentTree)
+		ts.currentTree = nil
+	}
 
+	for _, token := range tokens {
 		switch token.Type {
 		case Identifier:
-			if ts.currentIdentifier != "" {
-				return nil, fmt.Errorf("unexpected identifier: %s", ts.currentIdentifier)
+			if ts.currentTree != nil {
+				ts.currentTree.Children = append(ts.currentTree.Children, SyntaxTree{Type: VariableIdentifier, Data: token.Data})
+				continue
 			}
 
 			ts.currentIdentifier = token.Data
@@ -47,12 +48,7 @@ func BuildTrees(tokens []Token) (*SyntaxTree, error) {
 				assignmentType = VariableReassignment
 			}
 
-			tree.Children = append(tree.Children, SyntaxTree{
-				Type:     assignmentType,
-				Children: []SyntaxTree{{Type: VariableIdentifier, Data: ts.currentIdentifier}},
-			})
-
-			ts.currentIdentifier = ""
+			ts.currentTree = &SyntaxTree{Type: assignmentType, Data: ts.currentIdentifier}
 		case Literal:
 			// Literal typing
 			var literalType TreeType
@@ -68,26 +64,16 @@ func BuildTrees(tokens []Token) (*SyntaxTree, error) {
 				}
 			}
 
-			// Function call
-			if ts.currentTree != nil && ts.currentTree.Type == BuiltinFunction {
-				ts.currentTree.Children = append(ts.currentTree.Children, SyntaxTree{Type: literalType, Data: token.Data})
+			if ts.currentTree != nil {
+				if ts.currentTree.Type == BuiltinFunction {
+					ts.currentTree.Children = append(ts.currentTree.Children, SyntaxTree{Type: literalType, Data: token.Data})
+				}
+				if ts.currentTree.Type == VariableReassignment || ts.currentTree.Type == VariableAssignment {
+					ts.currentTree.Children = append(ts.currentTree.Children, SyntaxTree{Type: literalType, Data: token.Data})
+					appendCurrentTree()
+				}
 			}
 
-			// Everything below require a lastRootTree
-			if lastRootTree == nil {
-				continue
-			}
-
-			// Variable assignment
-			deepestChild := lastRootTree.Children[len(lastRootTree.Children)-1]
-			if lastRootTree.Type != VariableAssignment && lastRootTree.Type != VariableReassignment {
-				return nil, fmt.Errorf("unexpected literal: %s", token.Data)
-			}
-			if deepestChild.Type == LiteralInteger || deepestChild.Type == LiteralString {
-				return nil, fmt.Errorf(`unexpected literal "%s" after literal "%s"`, token.Data, deepestChild.Data)
-			}
-
-			lastRootTree.Children = append(lastRootTree.Children, SyntaxTree{Type: literalType, Data: token.Data})
 			ts.currentIdentifier = ""
 		case OpenParen:
 			if ts.inFunctionParen {
@@ -106,10 +92,10 @@ func BuildTrees(tokens []Token) (*SyntaxTree, error) {
 				return nil, fmt.Errorf("unexpected ), no matching open parenthesis")
 			}
 
-			tree.Children = append(tree.Children, *ts.currentTree)
+			appendCurrentTree()
 
 			ts.inFunctionParen = false
-			ts.currentTree = nil
+			ts.currentIdentifier = ""
 		case Bang:
 			tree.Children = append(tree.Children, SyntaxTree{Type: ShellCmd, Data: token.Data})
 		case Comma:
@@ -118,6 +104,10 @@ func BuildTrees(tokens []Token) (*SyntaxTree, error) {
 		case CloseQuote:
 			ts.inStringLiteral = false
 		case Newline, Semicolon:
+			if ts.currentTree != nil {
+				appendCurrentTree()
+			}
+
 			ts.currentIdentifier = ""
 		default: // Just ignore lol
 		}

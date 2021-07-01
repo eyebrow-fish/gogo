@@ -19,8 +19,9 @@ func TestBuildTrees(t *testing.T) {
 			"variables",
 			args{[]Token{{Identifier, "foo"}, {Type: Assignment}, {Literal, "123"}}},
 			&SyntaxTree{Type: Program, Children: []SyntaxTree{{
-				Type:     VariableAssignment,
-				Children: []SyntaxTree{{Type: VariableIdentifier, Data: "foo"}, {Type: LiteralInteger, Data: "123"}},
+				VariableAssignment,
+				"foo",
+				[]SyntaxTree{{Type: LiteralInteger, Data: "123"}},
 			}}},
 			false,
 		},
@@ -43,16 +44,19 @@ func TestBuildTrees(t *testing.T) {
 			}},
 			&SyntaxTree{Type: Program, Children: []SyntaxTree{
 				{
-					Type:     VariableAssignment,
-					Children: []SyntaxTree{{Type: VariableIdentifier, Data: "foo"}, {Type: LiteralInteger, Data: "123"}},
+					VariableAssignment,
+					"foo",
+					[]SyntaxTree{{Type: LiteralInteger, Data: "123"}},
 				},
 				{
-					Type:     VariableReassignment,
-					Children: []SyntaxTree{{Type: VariableIdentifier, Data: "foo"}, {Type: LiteralString, Data: "bar"}},
+					VariableReassignment,
+					"foo",
+					[]SyntaxTree{{Type: LiteralString, Data: "bar"}},
 				},
 				{
-					Type:     VariableReassignment,
-					Children: []SyntaxTree{{Type: VariableIdentifier, Data: "foo"}, {Type: LiteralBool, Data: "true"}},
+					VariableReassignment,
+					"foo",
+					[]SyntaxTree{{Type: LiteralBool, Data: "true"}},
 				},
 			}},
 			false,
@@ -94,6 +98,32 @@ func TestBuildTrees(t *testing.T) {
 				"print",
 				[]SyntaxTree{{Type: LiteralString, Data: "Hello,"}, {Type: LiteralString, Data: "World!"}},
 			}}},
+			false,
+		},
+		{
+			"use variable",
+			args{[]Token{
+				{Identifier, "x"},
+				{Type: Assignment},
+				{Literal, "123"},
+				{Type: Newline},
+				{Identifier, "print"},
+				{Type: OpenParen},
+				{Identifier, "x"},
+				{Type: CloseParen},
+			}},
+			&SyntaxTree{Type: Program, Children: []SyntaxTree{
+				{
+					VariableAssignment,
+					"x",
+					[]SyntaxTree{{Type: LiteralInteger, Data: "123"}},
+				},
+				{
+					BuiltinFunction,
+					"print",
+					[]SyntaxTree{{Type: VariableIdentifier, Data: "x"}},
+				},
+			}},
 			false,
 		},
 		{

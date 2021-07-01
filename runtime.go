@@ -3,17 +3,18 @@ package gogo
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 func Go(tree SyntaxTree) error {
-	scopeData := make(map[string]interface{})
+	scopeData := make(scopeData)
 
 	for _, token := range tree.Children {
 		switch token.Type {
 		case BuiltinFunction:
-			builtinFunctions[token.Data](token.Children)
+			builtinFunctions[token.Data](scopeData, token.Children)
 		case VariableAssignment:
-			if _, ok := scopeData[token.Children[0].Data]; !ok {
+			if _, ok := scopeData[token.Data]; !ok {
 				assignVariable(scopeData, token)
 
 				continue
@@ -21,7 +22,7 @@ func Go(tree SyntaxTree) error {
 
 			return fmt.Errorf("variable already exists: %s", token.Children[0].Data)
 		case VariableReassignment:
-			if _, ok := scopeData[token.Children[0].Data]; ok {
+			if _, ok := scopeData[token.Data]; ok {
 				assignVariable(scopeData, token)
 
 				continue
@@ -35,8 +36,8 @@ func Go(tree SyntaxTree) error {
 }
 
 func assignVariable(scopeData map[string]interface{}, token SyntaxTree) {
-	variableIdentifier := token.Children[0].Data
-	value := token.Children[1]
+	variableIdentifier := token.Data
+	value := token.Children[0]
 
 	var variableData interface{}
 	switch value.Type {
@@ -51,8 +52,39 @@ func assignVariable(scopeData map[string]interface{}, token SyntaxTree) {
 	scopeData[variableIdentifier] = variableData
 }
 
-var builtinFunctions = map[string]func([]SyntaxTree){
-	"print": func(tree []SyntaxTree) {
-		print(tree[0].Data)
+var builtinFunctions = map[string]func(scopeData, []SyntaxTree){
+	"print": func(scopeData scopeData, tree []SyntaxTree) {
+		var datas []string
+		for _, t := range tree {
+			var data string
+			if t.Type == VariableIdentifier {
+				data = scopeData.getString(t.Data)
+			} else {
+				data = t.Data
+			}
+
+			datas = append(datas, data)
+		}
+		print(strings.Join(datas, " "))
 	},
+}
+
+type scopeData map[string]interface{}
+
+func (s scopeData) get(indent string) interface{} {
+	return s[indent]
+}
+
+func (s scopeData) getString(indent string) string {
+	data := s[indent]
+	switch data.(type) {
+	case string:
+		return data.(string)
+	case int:
+		return strconv.Itoa(data.(int))
+	case bool:
+		return strconv.FormatBool(data.(bool))
+	default:
+		return "[UNKNOWN]"
+	}
 }
