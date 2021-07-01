@@ -2,6 +2,8 @@ package gogo
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 )
@@ -29,6 +31,15 @@ func Go(tree SyntaxTree) error {
 			}
 
 			return fmt.Errorf("variable does not exist: %s", token.Children[0].Data)
+		case ShellCmd:
+			command := exec.Command("bash", "-c", token.Data)
+			command.Stdin = os.Stdin
+			command.Stdout = os.Stdout
+			command.Stderr = os.Stderr
+
+			if err := command.Run(); err != nil {
+				return err
+			}
 		}
 	}
 

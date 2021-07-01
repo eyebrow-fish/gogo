@@ -25,7 +25,7 @@ print("Hello, World!")
 `gogo` has semi-colon termination for beautiful multi-lining:
 
 ```gogo
-prefix := "my name is"; suffix := " Alex"; print(prefix + suffix)
+prefix := "my name is"; suffix := " Alex"; print(prefix, suffix)
 ```
 
 `gogo` can use shell programs:
